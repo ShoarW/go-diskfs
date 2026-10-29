@@ -759,8 +759,8 @@ func writeDirectories(dirs []*finalizeFileInfo, f backend.WritableFile, compress
 		}
 		// keep writing until we run out, or we hit metadata maxSize of 8KB
 		buf = append(buf, d.directory.toBytes(d.directory.inodeIndex)...)
-		if len(buf) > maxSize {
-			written, err := writeMetadataBlock(buf[:maxSize], f, compressor, location)
+		for len(buf) > maxSize {
+			written, err := writeMetadataBlock(buf[:maxSize], f, nil, location)
 			if err != nil {
 				return directoriesWritten, 0, err
 			}
@@ -774,7 +774,7 @@ func writeDirectories(dirs []*finalizeFileInfo, f backend.WritableFile, compress
 	}
 	// was there anything left?
 	if len(buf) > 0 {
-		written, err := writeMetadataBlock(buf, f, compressor, location)
+		written, err := writeMetadataBlock(buf, f, nil, location)
 		if err != nil {
 			return directoriesWritten, 0, err
 		}
@@ -1501,7 +1501,7 @@ func populateDirectoryLocations(directories []*finalizeFileInfo) {
 		}
 		b := d.directory.toBytes(0)
 		d.directoryLocation = blockPosition{
-			block:  uint32(pos / int(metadataBlockSize)),
+			block:  uint32(pos / int(metadataBlockSize) * (int(metadataBlockSize) + 2)),
 			offset: uint16(pos % int(metadataBlockSize)),
 			size:   len(b) + 3,
 		}
